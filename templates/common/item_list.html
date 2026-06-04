@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}품목 목록{% endblock %}
+{% block page_title %}품목 관리{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">검색</label>
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="품목코드, 품목명">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">분류</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">전체</option>
+                    {% for val, label in categories %}
+                    <option value="{{ val }}" {% if category == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">품목 목록 <span class="text-muted fw-normal">({{ page_obj.paginator.count }}건)</span></h6>
+        <a href="/common/items/new/" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>품목 등록
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">코드</th>
+                        <th>품목명</th>
+                        <th>분류</th>
+                        <th>단위</th>
+                        <th class="text-end">표준단가</th>
+                        <th>상태</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td class="ps-3 text-muted small">{{ item.code }}</td>
+                        <td class="fw-medium">{{ item.name }}</td>
+                        <td>{{ item.get_category_display }}</td>
+                        <td>{{ item.unit }}</td>
+                        <td class="text-end">{{ item.standard_price|floatformat:0 }}원</td>
+                        <td>
+                            {% if item.is_active %}
+                            <span class="badge bg-success">사용</span>
+                            {% else %}
+                            <span class="badge bg-secondary">미사용</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/common/items/{{ item.pk }}/edit/" class="btn btn-sm btn-outline-secondary">수정</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">품목이 없습니다.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white">
+        <nav>
+            <ul class="pagination pagination-sm mb-0 justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

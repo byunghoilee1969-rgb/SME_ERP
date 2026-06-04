@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}공급업체 수정{% else %}공급업체 등록{% endif %}{% endblock %}
+{% block page_title %}{% if object %}공급업체 수정{% else %}공급업체 등록{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">공급업체 정보</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">공급업체코드 <span class="text-danger">*</span></label>
+                            {{ form.code }}
+                            {% if form.code.errors %}<div class="text-danger small">{{ form.code.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">공급업체명 <span class="text-danger">*</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">사업자번호</label>
+                            {{ form.business_no }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">담당자</label>
+                            {{ form.contact_person }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">전화번호</label>
+                            {{ form.phone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">이메일</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">사용여부</label>
+                            <div class="form-check mt-2">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">사용</label>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">주소</label>
+                            {{ form.address }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>저장
+                        </button>
+                        <a href="/common/suppliers/" class="btn btn-outline-secondary">취소</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.formset-row { background: #fafafa; border: 1px solid #e9ecef; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+.formset-row:hover { background: #f0f4ff; }
+.delete-row { cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="order-form">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-white"><h6 class="mb-0 fw-bold">발주 기본정보</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">공급업체 <span class="text-danger">*</span></label>
+                            {{ form.supplier }}
+                            {% if form.supplier.errors %}<div class="text-danger small">{{ form.supplier.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">발주일 <span class="text-danger">*</span></label>
+                            {{ form.order_date }}
+                            {% if form.order_date.errors %}<div class="text-danger small">{{ form.order_date.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">납기예정일</label>
+                            {{ form.expected_date }}
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">비고</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">발주 품목</h6>
+                    <button type="button" id="add-item" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-plus-lg me-1"></i>품목 추가
+                    </button>
+                </div>
+                <div class="card-body">
+                    {{ formset.management_form }}
+                    <div id="formset-container">
+                        {% for form in formset %}
+                        <div class="formset-row {% if form.instance.pk %}has-instance{% endif %}" id="form-{{ forloop.counter0 }}">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">품목</label>
+                                    {{ form.item }}
+                                    {% if form.item.errors %}<div class="text-danger small">{{ form.item.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold">수량</label>
+                                    {{ form.quantity }}
+                                    {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold">단가</label>
+                                    {{ form.unit_price }}
+                                    {% if form.unit_price.errors %}<div class="text-danger small">{{ form.unit_price.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold">금액</label>
+                                    <input type="text" class="form-control form-control-sm amount-display" readonly placeholder="자동계산">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end gap-1">
+                                    {% if form.instance.pk %}
+                                    <div class="form-check mt-1">
+                                        {{ form.DELETE }}
+                                        <label class="form-check-label text-danger small" for="{{ form.DELETE.id_for_label }}">삭제</label>
+                                    </div>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-row w-100">삭제</button>
+                                    {% endif %}
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-end mt-3">
+                        <strong>합계: <span id="total-amount">0</span>원</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            {% if order %}
+            <div class="card mb-3">
+                <div class="card-header bg-white"><h6 class="mb-0 fw-bold">발주 정보</h6></div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 small text-muted">발주번호</dt>
+                        <dd class="col-sm-7 small fw-medium">{{ order.order_no }}</dd>
+                        <dt class="col-sm-5 small text-muted">상태</dt>
+                        <dd class="col-sm-7"><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></dd>
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>저장
+                        </button>
+                        <a href="/purchase/orders/" class="btn btn-outline-secondary">취소</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const container = document.getElementById('formset-container');
+    const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
+
+    function getFormCount() {
+        return parseInt(totalFormsInput.value);
+    }
+
+    function calcRow(row) {
+        const qty = parseFloat(row.querySelector('.quantity-input') ? row.querySelector('[id$="-quantity"]')?.value : row.querySelector('input[name$="-quantity"]')?.value) || 0;
+        const price = parseFloat(row.querySelector('[id$="-unit_price"]')?.value || row.querySelector('input[name$="-unit_price"]')?.value) || 0;
+        const amountEl = row.querySelector('.amount-display');
+        if (amountEl) amountEl.value = (qty * price).toLocaleString('ko-KR');
+        calcTotal();
+    }
+
+    function calcTotal() {
+        let total = 0;
+        container.querySelectorAll('.formset-row').forEach(row => {
+            const deleteCheck = row.querySelector('input[name$="-DELETE"]');
+            if (deleteCheck && deleteCheck.checked) return;
+            const qty = parseFloat(row.querySelector('input[name$="-quantity"]')?.value) || 0;
+            const price = parseFloat(row.querySelector('input[name$="-unit_price"]')?.value) || 0;
+            total += qty * price;
+        });
+        document.getElementById('total-amount').textContent = total.toLocaleString('ko-KR');
+    }
+
+    document.getElementById('add-item').addEventListener('click', function() {
+        const idx = getFormCount();
+        const newRow = document.createElement('div');
+        newRow.className = 'formset-row';
+        newRow.id = 'form-' + idx;
+        newRow.innerHTML = `
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">품목</label>
+                    <select name="items-${idx}-item" class="form-select form-select-sm item-select">
+                        ${document.querySelector('select[name="items-0-item"]')?.innerHTML || ''}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">수량</label>
+                    <input type="number" name="items-${idx}-quantity" class="form-control form-control-sm quantity-input" step="0.001" min="0">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">단가</label>
+                    <input type="number" name="items-${idx}-unit_price" class="form-control form-control-sm price-input" step="0.01" min="0">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">금액</label>
+                    <input type="text" class="form-control form-control-sm amount-display" readonly placeholder="자동계산">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-row w-100">삭제</button>
+                    <input type="hidden" name="items-${idx}-id" value="">
+                </div>
+            </div>
+        `;
+        container.appendChild(newRow);
+        totalFormsInput.value = idx + 1;
+        attachRowEvents(newRow);
+    });
+
+    container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('.formset-row').remove();
+            calcTotal();
+        }
+    });
+
+    function attachRowEvents(row) {
+        row.querySelectorAll('input[name$="-quantity"], input[name$="-unit_price"]').forEach(inp => {
+            inp.addEventListener('input', () => calcRow(row));
+        });
+        // Auto-fill price from item selection
+        const itemSelect = row.querySelector('select[name$="-item"]');
+        if (itemSelect) {
+            itemSelect.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.dataset.price) {
+                    const priceInput = row.querySelector('input[name$="-unit_price"]');
+                    if (priceInput) { priceInput.value = opt.dataset.price; calcRow(row); }
+                }
+            });
+        }
+    }
+
+    container.querySelectorAll('.formset-row').forEach(row => {
+        attachRowEvents(row);
+        calcRow(row);
+    });
+
+    // Add data-price to item options
+    document.querySelectorAll('select[name$="-item"] option').forEach(opt => {
+        // price data is not embedded here; skip
+    });
+})();
+</script>
+{% endblock %}

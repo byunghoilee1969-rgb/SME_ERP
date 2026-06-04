@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<form method="post" id="receipt-form">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-white"><h6 class="mb-0 fw-bold">입고 기본정보</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">발주번호 <span class="text-danger">*</span></label>
+                            {{ form.purchase_order }}
+                            {% if form.purchase_order.errors %}<div class="text-danger small">{{ form.purchase_order.errors.0 }}</div>{% endif %}
+                            <div class="form-text">확정 또는 부분입고 상태의 발주만 표시됩니다.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">입고일 <span class="text-danger">*</span></label>
+                            {{ form.receipt_date }}
+                            {% if form.receipt_date.errors %}<div class="text-danger small">{{ form.receipt_date.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">창고</label>
+                            {{ form.warehouse }}
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">비고</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">입고 품목</h6>
+                    <button type="button" id="load-items" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-arrow-repeat me-1"></i>발주 품목 불러오기
+                    </button>
+                </div>
+                <div class="card-body">
+                    {{ formset.management_form }}
+                    <div id="formset-container">
+                        {% for frm in formset %}
+                        <div class="row g-2 align-items-end mb-2 formset-row">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">발주품목</label>
+                                {{ frm.order_item }}
+                                {% if frm.order_item.errors %}<div class="text-danger small">{{ frm.order_item.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">입고수량</label>
+                                {{ frm.quantity_received }}
+                                {% if frm.quantity_received.errors %}<div class="text-danger small">{{ frm.quantity_received.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">비고</label>
+                                {{ frm.notes }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                {% if frm.instance.pk %}
+                                <div class="form-check">
+                                    {{ frm.DELETE }}
+                                    <label class="form-check-label text-danger small">삭제</label>
+                                </div>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-row w-100">삭제</button>
+                                {% endif %}
+                                {% for hidden in frm.hidden_fields %}{{ hidden }}{% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" id="add-item" class="btn btn-sm btn-outline-secondary mt-2">
+                        <i class="bi bi-plus-lg me-1"></i>품목 추가
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            {% if order %}
+            <div class="card mb-3">
+                <div class="card-header bg-white"><h6 class="mb-0 fw-bold">발주 정보</h6></div>
+                <div class="card-body small">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted">발주번호</dt>
+                        <dd class="col-sm-7 fw-medium">{{ order.order_no }}</dd>
+                        <dt class="col-sm-5 text-muted">공급업체</dt>
+                        <dd class="col-sm-7">{{ order.supplier.name }}</dd>
+                        <dt class="col-sm-5 text-muted">발주일</dt>
+                        <dd class="col-sm-7">{{ order.order_date }}</dd>
+                    </dl>
+                    <hr>
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>품목</th><th>발주</th><th>입고</th><th>잔여</th></tr></thead>
+                        <tbody>
+                            {% for oi in order.items.all %}
+                            <tr>
+                                <td>{{ oi.item.name }}</td>
+                                <td>{{ oi.quantity }}</td>
+                                <td class="text-success">{{ oi.received_quantity }}</td>
+                                <td class="text-warning">{{ oi.remaining_quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-1"></i>입고 저장
+                        </button>
+                        <a href="/purchase/receipts/" class="btn btn-outline-secondary">취소</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const container = document.getElementById('formset-container');
+    const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
+    const orderSelect = document.getElementById('id_purchase_order');
+    const loadBtn = document.getElementById('load-items');
+    const addBtn = document.getElementById('add-item');
+
+    function getFormCount() {
+        return parseInt(totalFormsInput.value);
+    }
+
+    function getOrderItemSelectHTML(items) {
+        let html = '<option value="">---------</option>';
+        items.forEach(item => {
+            html += `<option value="${item.id}" data-remaining="${item.remaining_qty}">${item.item_code} - ${item.item_name} (잔여: ${item.remaining_qty} ${item.unit})</option>`;
+        });
+        return html;
+    }
+
+    loadBtn.addEventListener('click', function() {
+        const orderPk = orderSelect.value;
+        if (!orderPk) { alert('발주번호를 먼저 선택하세요.'); return; }
+        fetch(`/purchase/ajax/order-items/?order_pk=${orderPk}`)
+            .then(r => r.json())
+            .then(data => {
+                container.innerHTML = '';
+                totalFormsInput.value = 0;
+                data.items.forEach((item, idx) => {
+                    if (parseFloat(item.remaining_qty) <= 0) return;
+                    addRow(idx, getOrderItemSelectHTML(data.items), item.id, item.remaining_qty);
+                });
+            });
+    });
+
+    addBtn.addEventListener('click', function() {
+        const orderPk = orderSelect.value;
+        if (!orderPk) { alert('발주번호를 먼저 선택하세요.'); return; }
+        fetch(`/purchase/ajax/order-items/?order_pk=${orderPk}`)
+            .then(r => r.json())
+            .then(data => {
+                const idx = getFormCount();
+                addRow(idx, getOrderItemSelectHTML(data.items), '', '');
+            });
+    });
+
+    function addRow(idx, selectHTML, selectedValue, defaultQty) {
+        const row = document.createElement('div');
+        row.className = 'row g-2 align-items-end mb-2 formset-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">발주품목</label>
+                <select name="items-${idx}-order_item" class="form-select form-select-sm">${selectHTML}</select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">입고수량</label>
+                <input type="number" name="items-${idx}-quantity_received" class="form-control form-control-sm" step="0.001" min="0" value="${defaultQty}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">비고</label>
+                <input type="text" name="items-${idx}-notes" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-row w-100">삭제</button>
+                <input type="hidden" name="items-${idx}-id" value="">
+            </div>
+        `;
+        if (selectedValue) {
+            const sel = row.querySelector('select');
+            for (let opt of sel.options) {
+                if (opt.value == selectedValue) { opt.selected = true; break; }
+            }
+        }
+        container.appendChild(row);
+        totalFormsInput.value = parseInt(totalFormsInput.value) + 1;
+    }
+
+    container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('.formset-row').remove();
+        }
+    });
+})();
+</script>
+{% endblock %}

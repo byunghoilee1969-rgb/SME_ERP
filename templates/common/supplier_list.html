@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}공급업체 목록{% endblock %}
+{% block page_title %}공급업체 관리{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">검색</label>
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="업체코드, 업체명">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">사용여부</label>
+                <select name="active" class="form-select form-select-sm">
+                    <option value="">전체</option>
+                    <option value="1" {% if active == '1' %}selected{% endif %}>사용</option>
+                    <option value="0" {% if active == '0' %}selected{% endif %}>미사용</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">공급업체 목록 <span class="text-muted fw-normal">({{ page_obj.paginator.count }}건)</span></h6>
+        <a href="/common/suppliers/new/" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>공급업체 등록
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">코드</th>
+                        <th>업체명</th>
+                        <th>사업자번호</th>
+                        <th>담당자</th>
+                        <th>전화번호</th>
+                        <th>이메일</th>
+                        <th>상태</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supplier in suppliers %}
+                    <tr>
+                        <td class="ps-3 text-muted small">{{ supplier.code }}</td>
+                        <td class="fw-medium">{{ supplier.name }}</td>
+                        <td>{{ supplier.business_no|default:"-" }}</td>
+                        <td>{{ supplier.contact_person|default:"-" }}</td>
+                        <td>{{ supplier.phone|default:"-" }}</td>
+                        <td>{{ supplier.email|default:"-" }}</td>
+                        <td>
+                            {% if supplier.is_active %}
+                            <span class="badge bg-success">사용</span>
+                            {% else %}
+                            <span class="badge bg-secondary">미사용</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/common/suppliers/{{ supplier.pk }}/edit/" class="btn btn-sm btn-outline-secondary">수정</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">공급업체가 없습니다.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white">
+        <nav>
+            <ul class="pagination pagination-sm mb-0 justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

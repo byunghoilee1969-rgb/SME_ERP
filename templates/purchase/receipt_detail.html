@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}입고 상세 - {{ receipt.receipt_no }}{% endblock %}
+{% block page_title %}입고 상세{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">기본 정보</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5 text-muted small">입고번호</dt>
+                            <dd class="col-sm-7 fw-bold">{{ receipt.receipt_no }}</dd>
+                            <dt class="col-sm-5 text-muted small">발주번호</dt>
+                            <dd class="col-sm-7">
+                                <a href="/purchase/orders/{{ receipt.purchase_order.pk }}/" class="text-decoration-none">
+                                    {{ receipt.purchase_order.order_no }}
+                                </a>
+                            </dd>
+                            <dt class="col-sm-5 text-muted small">공급업체</dt>
+                            <dd class="col-sm-7">{{ receipt.purchase_order.supplier.name }}</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5 text-muted small">입고일</dt>
+                            <dd class="col-sm-7">{{ receipt.receipt_date }}</dd>
+                            <dt class="col-sm-5 text-muted small">창고</dt>
+                            <dd class="col-sm-7">{{ receipt.warehouse|default:"-" }}</dd>
+                            <dt class="col-sm-5 text-muted small">상태</dt>
+                            <dd class="col-sm-7"><span class="badge badge-{{ receipt.status }}">{{ receipt.get_status_display }}</span></dd>
+                            <dt class="col-sm-5 text-muted small">등록일시</dt>
+                            <dd class="col-sm-7 small text-muted">{{ receipt.created_at|date:"Y-m-d H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+                {% if receipt.notes %}
+                <hr>
+                <p class="mb-0 text-muted small"><strong>비고:</strong> {{ receipt.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">입고 품목</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">품목코드</th>
+                                <th>품목명</th>
+                                <th>단위</th>
+                                <th class="text-end">발주수량</th>
+                                <th class="text-end">입고수량</th>
+                                <th>비고</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ri in items %}
+                            <tr>
+                                <td class="ps-3 text-muted small">{{ ri.order_item.item.code }}</td>
+                                <td>{{ ri.order_item.item.name }}</td>
+                                <td>{{ ri.order_item.item.unit }}</td>
+                                <td class="text-end">{{ ri.order_item.quantity }}</td>
+                                <td class="text-end fw-bold text-success">{{ ri.quantity_received }}</td>
+                                <td>{{ ri.notes|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-3">입고 품목이 없습니다.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/purchase/receipts/" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>목록으로
+                    </a>
+                    <a href="/purchase/orders/{{ receipt.purchase_order.pk }}/" class="btn btn-outline-primary">
+                        <i class="bi bi-cart3 me-1"></i>발주 보기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

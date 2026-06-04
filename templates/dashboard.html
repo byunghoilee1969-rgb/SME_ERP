@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}대시보드{% endblock %}
+{% block page_title %}대시보드{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card blue h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">이번달 발주</p>
+                        <h3 class="fw-bold mb-0">{{ order_stats.this_month }}</h3>
+                        <small class="text-muted">건</small>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 rounded p-2">
+                        <i class="bi bi-cart3 text-primary fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card yellow h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">확정 대기</p>
+                        <h3 class="fw-bold mb-0">{{ order_stats.draft }}</h3>
+                        <small class="text-muted">건 (초안)</small>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 rounded p-2">
+                        <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card green h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">이번달 입고</p>
+                        <h3 class="fw-bold mb-0">{{ receipt_stats.this_month }}</h3>
+                        <small class="text-muted">건</small>
+                    </div>
+                    <div class="bg-success bg-opacity-10 rounded p-2">
+                        <i class="bi bi-box-seam text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card red h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">입고 대기</p>
+                        <h3 class="fw-bold mb-0">{{ receipt_stats.pending }}</h3>
+                        <small class="text-muted">건</small>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 rounded p-2">
+                        <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">최근 발주현황</h6>
+                <a href="/purchase/orders/" class="btn btn-sm btn-outline-primary">전체보기</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">발주번호</th>
+                                <th>공급업체</th>
+                                <th>발주일</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td class="ps-3">
+                                    <a href="/purchase/orders/{{ order.pk }}/" class="text-decoration-none fw-medium">{{ order.order_no }}</a>
+                                </td>
+                                <td>{{ order.supplier.name }}</td>
+                                <td>{{ order.order_date }}</td>
+                                <td>
+                                    <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">발주 내역이 없습니다.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">최근 입고현황</h6>
+                <a href="/purchase/receipts/" class="btn btn-sm btn-outline-success">전체보기</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">입고번호</th>
+                                <th>발주번호</th>
+                                <th>입고일</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for receipt in recent_receipts %}
+                            <tr>
+                                <td class="ps-3">
+                                    <a href="/purchase/receipts/{{ receipt.pk }}/" class="text-decoration-none fw-medium">{{ receipt.receipt_no }}</a>
+                                </td>
+                                <td>{{ receipt.purchase_order.order_no }}</td>
+                                <td>{{ receipt.receipt_date }}</td>
+                                <td>
+                                    <span class="badge badge-{{ receipt.status }}">{{ receipt.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">입고 내역이 없습니다.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">발주 상태 현황</h6>
+                <div class="row text-center">
+                    <div class="col">
+                        <div class="p-3 rounded bg-secondary bg-opacity-10">
+                            <div class="fs-4 fw-bold text-secondary">{{ order_stats.draft }}</div>
+                            <div class="small text-muted">초안</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded bg-primary bg-opacity-10">
+                            <div class="fs-4 fw-bold text-primary">{{ order_stats.confirmed }}</div>
+                            <div class="small text-muted">확정</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded bg-warning bg-opacity-10">
+                            <div class="fs-4 fw-bold text-warning">{{ order_stats.partial }}</div>
+                            <div class="small text-muted">부분입고</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded bg-success bg-opacity-10">
+                            <div class="fs-4 fw-bold text-success">{{ order_stats.completed }}</div>
+                            <div class="small text-muted">완료</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
